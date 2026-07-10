@@ -1,8 +1,7 @@
-from pathlib import Path
-
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.database.enums import AudioStatus
 from app.database.models.audio import Audio
 from app.repositories.audio_repository import AudioRepository
@@ -26,23 +25,28 @@ class AudioService:
         Validate, save and persist uploaded audio.
         """
 
-        # Validate format
+        if not file.filename:
+            raise ValueError("Filename is missing.")
+
         if not is_supported_audio(file):
             raise ValueError("Unsupported audio format.")
 
-        # Generate unique filename
         stored_filename = generate_unique_filename(file.filename)
 
-        # Destination path
         upload_path = get_upload_path(stored_filename)
 
-        # Save file
         content = await file.read()
+
+        max_size = settings.MAX_AUDIO_SIZE_MB * 1024 * 1024
+
+        if len(content) > max_size:
+            raise ValueError(
+                f"File exceeds {settings.MAX_AUDIO_SIZE_MB} MB limit."
+            )
 
         with open(upload_path, "wb") as buffer:
             buffer.write(content)
 
-        # Create database object
         audio = Audio(
             original_filename=file.filename,
             stored_filename=stored_filename,

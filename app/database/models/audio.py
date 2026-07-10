@@ -10,6 +10,7 @@ from app.database.base import Base
 from app.database.enums import AudioStatus
 from app.database.mixins import TimestampMixin
 
+from sqlalchemy.orm import relationship
 
 class Audio(Base, TimestampMixin):
     """
@@ -54,4 +55,10 @@ class Audio(Base, TimestampMixin):
         Enum(AudioStatus),
         default=AudioStatus.UPLOADED,
         nullable=False,
+    )
+
+    transcript = relationship(
+        "Transcript",
+        back_populates="audio",
+        uselist=False,
     )
