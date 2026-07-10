@@ -10,12 +10,12 @@ from app.database.base import Base
 from app.database.mixins import TimestampMixin
 
 
-class Transcript(Base, TimestampMixin):
+class SOAPNote(Base, TimestampMixin):
     """
-    Transcript generated from an uploaded audio file.
+    SOAP note generated from a transcript.
     """
 
-    __tablename__ = "transcripts"
+    __tablename__ = "soap_notes"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -23,30 +23,19 @@ class Transcript(Base, TimestampMixin):
         default=uuid.uuid4,
     )
 
-    audio_id: Mapped[uuid.UUID] = mapped_column(
+    transcript_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("audio_files.id"),
+        ForeignKey("transcripts.id"),
         unique=True,
         nullable=False,
     )
 
-    transcript: Mapped[str] = mapped_column(
+    soap_json: Mapped[str] = mapped_column(
         Text,
         nullable=False,
     )
 
-    language: Mapped[str] = mapped_column(
-        nullable=False,
-        default="en",
-    )
-
-    audio = relationship(
-        "Audio",
-        back_populates="transcript",
-    )
-
-    soap_note = relationship(
-        "SOAPNote",
-        back_populates="transcript",
-        uselist=False,
+    transcript = relationship(
+        "Transcript",
+        back_populates="soap_note",
     )

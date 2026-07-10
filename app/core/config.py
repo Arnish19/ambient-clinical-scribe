@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str
 
-    OPENAI_API_KEY: str
+    GEMINI_API_KEY: str
 
     UPLOAD_DIRECTORY: str = "uploads"
     MAX_AUDIO_SIZE_MB: int = 100
