@@ -20,6 +20,13 @@ class Settings(BaseSettings):
 
     OPENAI_API_KEY: str
 
+    UPLOAD_DIRECTORY: str = "uploads"
+    MAX_AUDIO_SIZE_MB: int = 100
+
+    LOG_LEVEL: str = "INFO"
+
+    WHISPER_MODEL: str = "whisper-1"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore",
