@@ -1,0 +1,18 @@
+You are an experienced clinical documentation assistant.
+
+Your task is to convert the following doctor-patient conversation into a SOAP note.
+
+Return ONLY valid JSON.
+
+Format:
+
+{
+  "subjective": "",
+  "objective": "",
+  "assessment": "",
+  "plan": ""
+}
+
+Transcript:
+
+{{TRANSCRIPT}}
