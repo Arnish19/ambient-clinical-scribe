@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import ForeignKey, Text
+from sqlalchemy import ForeignKey
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -30,8 +31,8 @@ class SOAPNote(Base, TimestampMixin):
         nullable=False,
     )
 
-    soap_json: Mapped[str] = mapped_column(
-        Text,
+    soap_json: Mapped[dict] = mapped_column(
+        JSONB,
         nullable=False,
     )
 

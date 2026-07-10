@@ -1,19 +1,21 @@
+import json
 from pathlib import Path
 from uuid import UUID
 
-from google import genai
+from ollama import chat
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
 from app.database.models.soap_note import SOAPNote
 from app.repositories.soap_repository import SOAPRepository
 
 
 class SOAPService:
+    """
+    Generates SOAP notes using a local Ollama model.
+    """
 
     def __init__(self, db: Session):
         self.repository = SOAPRepository(db)
-        self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
     def generate(self, audio_id: UUID) -> SOAPNote:
 
@@ -24,21 +26,36 @@ class SOAPService:
 
         prompt = Path(
             "app/prompts/soap_prompt.txt"
-        ).read_text()
+        ).read_text(encoding="utf-8")
 
         prompt = prompt.replace(
             "{{TRANSCRIPT}}",
             transcript.transcript,
         )
 
-        response = self.client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
+        response = chat(
+            model="mistral:latest",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
         )
+
+        response_text = response.message.content.strip()
+
+        # Remove markdown code fences if present
+        if response_text.startswith("```"):
+            lines = response_text.splitlines()
+            lines = [line for line in lines if not line.startswith("```")]
+            response_text = "\n".join(lines)
+
+        soap_data = json.loads(response_text)
 
         soap_note = SOAPNote(
             transcript_id=transcript.id,
-            soap_json=response.text,
+            soap_json=soap_data,
         )
 
         return self.repository.create(soap_note)
