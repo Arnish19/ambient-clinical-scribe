@@ -1,41 +1,48 @@
 from pathlib import Path
 from uuid import UUID
 
-from openai import OpenAI
+from faster_whisper import WhisperModel
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
 from app.database.models.transcript import Transcript
 from app.repositories.transcript_repository import TranscriptRepository
 
 
 class WhisperService:
     """
-    Handles speech-to-text using OpenAI Whisper.
+    Handles speech-to-text using Faster Whisper.
     """
 
     def __init__(self, db: Session):
         self.repository = TranscriptRepository(db)
-        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
+
+        # Load the model once
+        self.model = WhisperModel(
+            "base",
+            device="cpu",
+            compute_type="int8",
+        )
 
     def transcribe(self, audio_id: UUID) -> Transcript:
-
         audio = self.repository.get_audio(audio_id)
 
         if audio is None:
             raise ValueError("Audio not found.")
 
-        with open(Path(audio.file_path), "rb") as file:
+        if not Path(audio.file_path).exists():
+            raise FileNotFoundError("Audio file not found.")
 
-            result = self.client.audio.transcriptions.create(
-                model=settings.WHISPER_MODEL,
-                file=file,
-            )
+        segments, info = self.model.transcribe(audio.file_path)
+
+        transcript_text = " ".join(
+            segment.text.strip()
+            for segment in segments
+        )
 
         transcript = Transcript(
             audio_id=audio.id,
-            transcript=result.text,
-            language="en",
+            transcript=transcript_text,
+            language=info.language,
         )
 
         return self.repository.create(transcript)
