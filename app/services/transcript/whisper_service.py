@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.database.models.transcript import Transcript
 from app.repositories.transcript_repository import TranscriptRepository
 
+from app.core.whisper import model
 
 class WhisperService:
     """
@@ -17,11 +18,6 @@ class WhisperService:
         self.repository = TranscriptRepository(db)
 
         # Load the model once
-        self.model = WhisperModel(
-            "base",
-            device="cpu",
-            compute_type="int8",
-        )
 
     def transcribe(self, audio_id: UUID) -> Transcript:
         audio = self.repository.get_audio(audio_id)
@@ -32,7 +28,7 @@ class WhisperService:
         if not Path(audio.file_path).exists():
             raise FileNotFoundError("Audio file not found.")
 
-        segments, info = self.model.transcribe(audio.file_path)
+        segments, info = model.transcribe(audio.file_path)
 
         transcript_text = " ".join(
             segment.text.strip()
