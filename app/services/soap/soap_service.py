@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 from uuid import UUID
 
@@ -24,13 +25,13 @@ class SOAPService:
         if transcript is None:
             raise ValueError("Transcript not found.")
 
-        prompt = Path(
-            "app/prompts/soap_prompt.txt"
-        ).read_text(encoding="utf-8")
-
-        prompt = prompt.replace(
-            "{{TRANSCRIPT}}",
-            transcript.transcript,
+        prompt = (
+            Path("app/prompts/soap_prompt.txt")
+            .read_text(encoding="utf-8")
+            .replace(
+                "{{TRANSCRIPT}}",
+                transcript.transcript,
+            )
         )
 
         response = chat(
@@ -45,13 +46,28 @@ class SOAPService:
 
         response_text = response.message.content.strip()
 
-        # Remove markdown code fences if present
+        # Remove markdown fences
         if response_text.startswith("```"):
-            lines = response_text.splitlines()
-            lines = [line for line in lines if not line.startswith("```")]
-            response_text = "\n".join(lines)
+            response_text = "\n".join(
+                line
+                for line in response_text.splitlines()
+                if not line.startswith("```")
+            )
 
-        soap_data = json.loads(response_text)
+        # Extract first JSON object
+        match = re.search(r"\{[\s\S]*\}", response_text)
+
+        if not match:
+            raise ValueError(
+                f"No JSON returned by Ollama:\n\n{response_text}"
+            )
+
+        try:
+            soap_data = json.loads(match.group())
+        except json.JSONDecodeError:
+            raise ValueError(
+                f"Invalid JSON:\n\n{match.group()}"
+            )
 
         soap_note = SOAPNote(
             transcript_id=transcript.id,
